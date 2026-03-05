@@ -204,7 +204,10 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
     env.PAPERCLIP_API_KEY = authToken;
   }
 
-  const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });
+  // Strip Claude Code session vars so nested `claude` invocations are allowed.
+  const CLAUDE_NESTED_BLOCKERS = ["CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SESSION_ACCESS_TOKEN", "CLAUDE_CODE_MAX_OUTPUT_TOKENS"];
+  const baseEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !CLAUDE_NESTED_BLOCKERS.includes(k)));
+  const runtimeEnv = ensurePathInEnv({ ...baseEnv, ...env });
   await ensureCommandResolvable(command, cwd, runtimeEnv);
 
   const timeoutSec = asNumber(config.timeoutSec, 0);
